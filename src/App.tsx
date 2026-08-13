@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { SplashScreen } from '@capacitor/splash-screen';
+import { App as CapApp } from '@capacitor/app';
 import {
   TabDestination,
   Recipe,
@@ -13,6 +17,7 @@ import {
 import { INITIAL_RECIPES } from './data/recipes';
 import { LocalStorageService } from './services/LocalStorageService';
 import { AuthService } from './services/AuthService';
+import { FirebaseService, isFirebaseConfigured } from './services/FirebaseService';
 import { matchAndRankRecipes } from './services/IngredientMatchingEngine';
 
 // Screens
@@ -64,9 +69,78 @@ export default function App() {
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [matchedRecipes, setMatchedRecipes] = useState<MatchedRecipe[]>([]);
 
+  // Initialize Capacitor Native Settings
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.setOverlaysWebView({ overlay: true }).catch(() => {});
+      StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
+      SplashScreen.hide().catch(() => {});
+    }
+  }, []);
+
+  // Handle Android Native Hardware Back Button
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const backListener = CapApp.addListener('backButton', () => {
+      if (isAccountModalOpen) {
+        setIsAccountModalOpen(false);
+        return;
+      }
+      if (viewMode === 'recipe_detail') {
+        setViewMode(matchedRecipes.length > 0 ? 'discovery' : 'tab');
+        return;
+      }
+      if (viewMode === 'discovery' || viewMode === 'confirm_scan') {
+        setViewMode('tab');
+        return;
+      }
+      if (authState === 'unauthenticated') {
+        if (authScreen !== 'welcome') {
+          setAuthScreen('welcome');
+          return;
+        }
+      }
+      if (activeTab !== 'scan') {
+        setActiveTab('scan');
+        return;
+      }
+      CapApp.exitApp();
+    });
+
+    return () => {
+      backListener.then((l) => l.remove());
+    };
+  }, [isAccountModalOpen, viewMode, activeTab, authState, authScreen, matchedRecipes.length]);
+
   // Initialize Auth & Subscribe to State Changes
   useEffect(() => {
     AuthService.init();
+
+    // Listen to Firebase Auth if configured
+    let fbUnsubscribe: (() => void) | null = null;
+    if (isFirebaseConfigured) {
+      fbUnsubscribe = FirebaseService.onAuthChange(async (userObj) => {
+        if (userObj) {
+          setCurrentUser(userObj);
+          setAuthState('authenticated');
+          LocalStorageService.migrateLocalDataToUser(userObj.id);
+
+          // Sync Firestore data
+          try {
+            const saved = await FirebaseService.getSavedRecipes(userObj.id);
+            if (saved.length > 0) setSavedRecipes(saved);
+            else setSavedRecipes(LocalStorageService.getSavedRecipes(userObj.id));
+
+            const history = await FirebaseService.getScanHistory(userObj.id);
+            if (history.length > 0) setScanHistory(history);
+            else setScanHistory(LocalStorageService.getScanHistory(userObj.id));
+          } catch (err) {
+            console.warn('Firestore sync note:', err);
+          }
+        }
+      });
+    }
 
     const unsubscribe = AuthService.onAuthStateChanged((user, state) => {
       setAuthState(state);
@@ -95,7 +169,10 @@ export default function App() {
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      if (fbUnsubscribe) fbUnsubscribe();
+    };
   }, []);
 
   // Update Matched Recipes when active ingredients or filters change

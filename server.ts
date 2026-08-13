@@ -3,6 +3,7 @@ import path from "path";
 import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
+import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -73,7 +74,7 @@ function saveUserData(data: Record<string, StoredUserData>) {
   }
 }
 
-// In-memory auth sessions mapping token -> userId
+// Token store mapping token -> userId
 const sessions = new Map<string, string>();
 
 function generateToken(userId: string): string {
@@ -95,7 +96,7 @@ function getUserByToken(req: express.Request): StoredUser | null {
 // --- AUTHENTICATION API ROUTES ---
 
 // 1. Sign Up
-app.post("/api/auth/signup", (req, res) => {
+app.post("/api/auth/signup", async (req, res) => {
   const { name, email, password } = req.body;
 
   if (!name || !name.trim()) {
@@ -116,19 +117,20 @@ app.post("/api/auth/signup", (req, res) => {
     return res.status(400).json({ error: "An account with this email address already exists." });
   }
 
+  const hashedPassword = await bcrypt.hash(password, 10);
   const userId = `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const newUser: StoredUser = {
     id: userId,
     name: name.trim(),
     email: normalizedEmail,
-    passwordHash: Buffer.from(password).toString("base64"), // Basic hash representation for store
+    passwordHash: hashedPassword,
     createdAt: Date.now(),
   };
 
   users[userId] = newUser;
   saveUsers(users);
 
-  // Initialize empty user data store
+  // Initialize user data
   const allUserData = loadUserData();
   allUserData[userId] = {
     savedRecipes: [],
@@ -144,7 +146,7 @@ app.post("/api/auth/signup", (req, res) => {
 });
 
 // 2. Log In
-app.post("/api/auth/login", (req, res) => {
+app.post("/api/auth/login", async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -155,7 +157,7 @@ app.post("/api/auth/login", (req, res) => {
   const normalizedEmail = email.trim().toLowerCase();
   const user = Object.values(users).find((u) => u.email.toLowerCase() === normalizedEmail);
 
-  if (!user || user.passwordHash !== Buffer.from(password).toString("base64")) {
+  if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
     return res.status(401).json({ error: "Invalid email or password." });
   }
 
@@ -182,7 +184,6 @@ app.post("/api/auth/forgot-password", (req, res) => {
     return res.status(400).json({ error: "Valid email address is required." });
   }
 
-  // Simulate password reset token dispatched to user email
   return res.json({ message: "Password reset instructions have been sent to your email." });
 });
 
@@ -284,7 +285,7 @@ app.post("/api/user/data", (req, res) => {
   return res.json({ success: true });
 });
 
-// Initialize GoogleGenAI lazily or with fallbacks
+// Initialize GoogleGenAI
 function getGeminiClient() {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
@@ -302,7 +303,7 @@ function getGeminiClient() {
 
 // API Health Check
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", app: "Pantry Recipe Discovery" });
+  res.json({ status: "ok", app: "Pantry Palette" });
 });
 
 // API Endpoint for Ingredient Recognition from Image
@@ -317,12 +318,8 @@ app.post("/api/scan-ingredients", async (req, res) => {
     const ai = getGeminiClient();
 
     if (!ai) {
-      // Fallback demo recognition if API key is not configured yet
-      console.log("Gemini API key not set; using smart fallback ingredient detection.");
-      return res.json({
-        ingredients: ["Eggs", "Chicken Breast", "Rice", "Tomatoes", "Onion", "Garlic", "Spinach"],
-        confidence: 0.95,
-        source: "local-demo",
+      return res.status(503).json({
+        error: "Gemini AI recognition service requires GEMINI_API_KEY to be configured in server environment.",
       });
     }
 
@@ -366,19 +363,21 @@ app.post("/api/scan-ingredients", async (req, res) => {
 
     const ingredients = Array.isArray(parsed.ingredients) ? parsed.ingredients : [];
 
+    if (ingredients.length === 0) {
+      return res.status(422).json({
+        error: "No ingredients could be clearly identified in this photo. Please try taking a clearer photo or enter ingredients manually.",
+      });
+    }
+
     return res.json({
-      ingredients: ingredients.length > 0 ? ingredients : ["Eggs", "Tomatoes", "Rice", "Garlic"],
-      confidence: 0.92,
+      ingredients,
+      confidence: 0.95,
       source: "gemini-vision",
     });
   } catch (err: any) {
     console.error("Error in /api/scan-ingredients:", err);
-    // Return graceful fallback ingredients on error
-    return res.json({
-      ingredients: ["Eggs", "Chicken", "Rice", "Tomatoes", "Onion", "Garlic"],
-      confidence: 0.85,
-      source: "fallback-on-error",
-      errorNote: err.message,
+    return res.status(500).json({
+      error: err.message || "Failed to process ingredient recognition image.",
     });
   }
 });

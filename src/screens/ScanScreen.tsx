@@ -1,5 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { Camera, RefreshCw, Upload, Sparkles, AlertCircle, ArrowRight } from 'lucide-react';
+import { Camera as CameraIcon, RefreshCw, Upload, Sparkles, AlertCircle, ArrowRight } from 'lucide-react';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { Capacitor } from '@capacitor/core';
 
 interface ScanScreenProps {
   onScanComplete: (ingredients: string[], capturedImage: string | null) => void;
@@ -13,25 +15,47 @@ export const ScanScreen: React.FC<ScanScreenProps> = ({
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Start HTML5 Camera Stream
-  const startCamera = async () => {
-    setCameraError(null);
-    setIsCapturing(true);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
+  // Trigger Native Capacitor Camera or Web Camera Stream
+  const triggerCamera = async () => {
+    setScanError(null);
+
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const photo = await Camera.getPhoto({
+          quality: 85,
+          allowEditing: false,
+          resultType: CameraResultType.DataUrl,
+          source: CameraSource.Camera,
+        });
+
+        if (photo.dataUrl) {
+          setCapturedImage(photo.dataUrl);
+        }
+      } catch (err: any) {
+        console.warn('Native camera error or user cancelled:', err);
+        if (err?.message !== 'User cancelled photos app') {
+          setScanError('Camera permission denied or camera unavailable. You can upload a photo from your gallery.');
+        }
       }
-    } catch (err) {
-      console.warn('Camera access error or denied:', err);
-      setCameraError('Camera access unavailable. You can upload a photo or search ingredients manually.');
-      setIsCapturing(false);
+    } else {
+      // Web browser camera stream fallback
+      setIsCapturing(true);
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+        });
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (err) {
+        console.warn('Camera access error or denied:', err);
+        setScanError('Camera access unavailable. You can upload a photo or search ingredients manually.');
+        setIsCapturing(false);
+      }
     }
   };
 
@@ -44,7 +68,7 @@ export const ScanScreen: React.FC<ScanScreenProps> = ({
     setIsCapturing(false);
   };
 
-  const capturePhoto = () => {
+  const captureWebPhoto = () => {
     if (!videoRef.current) return;
     const canvas = document.createElement('canvas');
     canvas.width = videoRef.current.videoWidth || 640;
@@ -55,6 +79,27 @@ export const ScanScreen: React.FC<ScanScreenProps> = ({
       const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
       setCapturedImage(dataUrl);
       stopCamera();
+    }
+  };
+
+  const triggerGalleryPicker = async () => {
+    setScanError(null);
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const photo = await Camera.getPhoto({
+          quality: 85,
+          allowEditing: false,
+          resultType: CameraResultType.DataUrl,
+          source: CameraSource.Photos,
+        });
+        if (photo.dataUrl) {
+          setCapturedImage(photo.dataUrl);
+        }
+      } catch (err: any) {
+        console.warn('Gallery selection error or user cancelled:', err);
+      }
+    } else {
+      fileInputRef.current?.click();
     }
   };
 
@@ -72,24 +117,28 @@ export const ScanScreen: React.FC<ScanScreenProps> = ({
   };
 
   const handleConfirmAndProcess = async () => {
+    if (!capturedImage) return;
     setIsProcessing(true);
+    setScanError(null);
 
-    // Call service or process fallback
     try {
       const { IngredientRecognitionService } = await import('../services/IngredientRecognitionService');
-      const response = await IngredientRecognitionService.recognizeIngredients(capturedImage || '');
+      const response = await IngredientRecognitionService.recognizeIngredients(capturedImage);
       setIsProcessing(false);
       onScanComplete(response.ingredients, capturedImage);
-    } catch (err) {
+    } catch (err: any) {
       setIsProcessing(false);
-      // Default fallback list if error
-      onScanComplete(['Eggs', 'Chicken', 'Rice', 'Tomatoes', 'Onion', 'Garlic'], capturedImage);
+      console.error('Scan recognition error:', err);
+      setScanError(
+        err.message || 'Ingredient recognition failed. Please try again with another photo or search manually.'
+      );
     }
   };
 
   const resetCapture = () => {
     setCapturedImage(null);
-    setCameraError(null);
+    setScanError(null);
+    stopCamera();
   };
 
   return (
@@ -110,12 +159,12 @@ export const ScanScreen: React.FC<ScanScreenProps> = ({
       <div className="flex-1 flex flex-col justify-center my-2">
         {!isCapturing && !capturedImage && (
           <div
-            onClick={startCamera}
+            onClick={triggerCamera}
             className="w-full min-h-[290px] rounded-3xl bg-dotted-pattern border-2 border-[#153B28]/15 hover:border-[#153B28]/30 flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-all active-press shadow-xs relative overflow-hidden group"
           >
             {/* Camera icon button */}
             <div className="w-16 h-16 rounded-full bg-[#153B28] text-[#F8F0E2] flex items-center justify-center mb-4 shadow-md group-hover:scale-105 transition-transform shrink-0">
-              <Camera className="w-8 h-8 stroke-[1.75]" />
+              <CameraIcon className="w-8 h-8 stroke-[1.75]" />
             </div>
 
             {/* Title */}
@@ -133,7 +182,7 @@ export const ScanScreen: React.FC<ScanScreenProps> = ({
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                fileInputRef.current?.click();
+                triggerGalleryPicker();
               }}
               className="flex items-center gap-2 text-xs font-semibold text-[#153B28] bg-[#EFE8D8] border border-[#153B28]/15 px-4 py-2 rounded-full hover:bg-[#E2DAC8] transition-colors shadow-2xs"
             >
@@ -164,10 +213,10 @@ export const ScanScreen: React.FC<ScanScreenProps> = ({
             <div className="absolute bottom-4 inset-x-0 flex justify-center gap-4 px-4">
               <button
                 type="button"
-                onClick={capturePhoto}
+                onClick={captureWebPhoto}
                 className="bg-[#153B28] text-[#F8F0E2] font-semibold px-6 py-3 rounded-full flex items-center gap-2 shadow-lg active-press"
               >
-                <Camera className="w-5 h-5" />
+                <CameraIcon className="w-5 h-5" />
                 <span>Take Photo</span>
               </button>
               <button
@@ -219,20 +268,29 @@ export const ScanScreen: React.FC<ScanScreenProps> = ({
           </div>
         )}
 
-        {/* Camera Permission Error Notice */}
-        {cameraError && (
+        {/* Scan / Camera Notice or Error Banner */}
+        {scanError && (
           <div className="mt-3 p-3.5 bg-amber-50 border border-amber-200/80 rounded-2xl flex items-start gap-2.5 text-xs text-amber-900">
             <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="font-semibold mb-0.5">Camera Notice</p>
-              <p>{cameraError}</p>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="mt-2 text-xs font-bold text-[#153B28] underline"
-              >
-                Choose Photo from Gallery
-              </button>
+              <p className="font-semibold mb-0.5">Scan Notice</p>
+              <p>{scanError}</p>
+              <div className="mt-2 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={triggerGalleryPicker}
+                  className="text-xs font-bold text-[#153B28] underline"
+                >
+                  Choose from Gallery
+                </button>
+                <button
+                  type="button"
+                  onClick={onManualSearchClick}
+                  className="text-xs font-bold text-[#153B28] underline"
+                >
+                  Enter Ingredients Manually
+                </button>
+              </div>
             </div>
           </div>
         )}

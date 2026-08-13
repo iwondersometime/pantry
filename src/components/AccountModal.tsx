@@ -40,7 +40,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
   const [editError, setEditError] = useState('');
 
   // Confirmation dialog state
-  const [activeModal, setActiveModal] = useState<'none' | 'logout' | 'delete'>('none');
+  const [activeModal, setActiveModal] = useState<'none' | 'logout' | 'delete' | 'privacy' | 'terms'>('none');
   const [isProcessingAction, setIsProcessingAction] = useState(false);
 
   const handleSaveName = async () => {
@@ -211,13 +211,33 @@ export const AccountModal: React.FC<AccountModalProps> = ({
             </div>
           </div>
 
-          {/* Options Section */}
+          {/* Legal & Account Options Section */}
           <div className="flex flex-col gap-2 pt-2 border-t border-[#153B28]/10">
+            {/* Privacy Policy */}
+            <button
+              type="button"
+              onClick={() => setActiveModal('privacy')}
+              className="w-full flex items-center justify-between p-3 rounded-2xl bg-[#FFFDF8] border border-[#153B28]/15 text-[#153B28] hover:bg-[#EFE8D8] transition-colors text-xs font-semibold shadow-2xs"
+            >
+              <span>Privacy Policy</span>
+              <span className="text-[#153B28]/60 text-[11px]">View →</span>
+            </button>
+
+            {/* Terms of Service */}
+            <button
+              type="button"
+              onClick={() => setActiveModal('terms')}
+              className="w-full flex items-center justify-between p-3 rounded-2xl bg-[#FFFDF8] border border-[#153B28]/15 text-[#153B28] hover:bg-[#EFE8D8] transition-colors text-xs font-semibold shadow-2xs"
+            >
+              <span>Terms of Service</span>
+              <span className="text-[#153B28]/60 text-[11px]">View →</span>
+            </button>
+
             {/* Log Out Option */}
             <button
               type="button"
               onClick={() => setActiveModal('logout')}
-              className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-[#FFFDF8] border border-[#153B28]/15 text-[#153B28] hover:bg-[#EFE8D8] transition-colors text-sm font-semibold shadow-2xs"
+              className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-[#FFFDF8] border border-[#153B28]/15 text-[#153B28] hover:bg-[#EFE8D8] transition-colors text-sm font-semibold shadow-2xs mt-1"
             >
               <div className="flex items-center gap-2.5">
                 <LogOut className="w-4 h-4 stroke-[2]" />
@@ -239,6 +259,69 @@ export const AccountModal: React.FC<AccountModalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* PRIVACY POLICY MODAL */}
+      {activeModal === 'privacy' && (
+        <div className="fixed inset-0 z-60 bg-[#153B28]/80 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-[#F8F0E2] border border-[#153B28]/20 rounded-3xl p-6 max-w-sm w-full shadow-2xl flex flex-col max-h-[80vh]">
+            <div className="flex items-center justify-between mb-4 pb-2 border-b border-[#153B28]/10">
+              <h3 className="font-serif-editorial text-2xl font-normal text-[#153B28]">Privacy Policy</h3>
+              <button
+                type="button"
+                onClick={() => setActiveModal('none')}
+                className="w-7 h-7 rounded-full bg-[#EFE8D8] border border-[#153B28]/15 flex items-center justify-center"
+              >
+                <X className="w-4 h-4 text-[#153B28]" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto text-xs text-[#153B28]/85 space-y-3 leading-relaxed pr-1">
+              <p><strong>Pantry Palette Privacy Policy</strong></p>
+              <p>Your privacy is important to us. Pantry Palette processes fridge/pantry images securely using AI vision solely to identify food ingredients and recommend recipes.</p>
+              <p>1. <strong>Data Storage:</strong> Photos are analyzed on secure servers and are not sold to third parties.</p>
+              <p>2. <strong>Account Security:</strong> Authentication and user data are protected using Firebase Auth and encrypted database rules.</p>
+              <p>3. <strong>Your Rights:</strong> You can edit or delete your account and saved recipes at any time in Account Settings.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setActiveModal('none')}
+              className="mt-4 w-full py-2.5 bg-[#153B28] text-[#F8F0E2] font-semibold text-xs rounded-xl"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* TERMS OF SERVICE MODAL */}
+      {activeModal === 'terms' && (
+        <div className="fixed inset-0 z-60 bg-[#153B28]/80 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-[#F8F0E2] border border-[#153B28]/20 rounded-3xl p-6 max-w-sm w-full shadow-2xl flex flex-col max-h-[80vh]">
+            <div className="flex items-center justify-between mb-4 pb-2 border-b border-[#153B28]/10">
+              <h3 className="font-serif-editorial text-2xl font-normal text-[#153B28]">Terms of Service</h3>
+              <button
+                type="button"
+                onClick={() => setActiveModal('none')}
+                className="w-7 h-7 rounded-full bg-[#EFE8D8] border border-[#153B28]/15 flex items-center justify-center"
+              >
+                <X className="w-4 h-4 text-[#153B28]" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto text-xs text-[#153B28]/85 space-y-3 leading-relaxed pr-1">
+              <p><strong>Pantry Palette Terms of Service</strong></p>
+              <p>By using Pantry Palette, you agree to these terms.</p>
+              <p>1. <strong>Recipe Guidance:</strong> Recipes and AI ingredient suggestions are provided for general culinary guidance. Always verify allergen information independently.</p>
+              <p>2. <strong>Fair Use:</strong> You agree to use the application in compliance with local laws and Play Store guidelines.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setActiveModal('none')}
+              className="mt-4 w-full py-2.5 bg-[#153B28] text-[#F8F0E2] font-semibold text-xs rounded-xl"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* CONFIRMATION DIALOG: LOG OUT */}
       {activeModal === 'logout' && (

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#153B28</color>
+    <color name="colorPrimaryDark">#153B28</color>
+    <color name="colorAccent">#153B28</color>
+    <color name="pantryBackground">#F8F0E2</color>
+</resources>
