@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-cream: #F8F0E2;
+    --text-forest: #153B28;
+    --surface-sage: #DCE9DA;
+    --card-beige: #EFE8D8;
+    --accent-coral: #E05345;
+  }
+
+  body {
+    background-color: #F8F0E2;
+    color: #153B28;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  h1, h2, h3, .font-serif-editorial {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+}
+
+/* Custom Dotted Background for Camera Area */
+.bg-dotted-pattern {
+  background-image: radial-gradient(#153B28 0.75px, transparent 0.75px);
+  background-size: 12px 12px;
+  background-color: #FAF5EC;
+}
+
+/* Custom Hide Scrollbar */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Touch active scale feedback */
+.active-press {
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.active-press:active {
+  transform: scale(0.97);
+  opacity: 0.9;
+}

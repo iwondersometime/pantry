@@ -1,0 +1,10 @@
+{
+  "name": "Pantry",
+  "description": "Ingredient-first recipe discovery app with camera fridge scanning, swipe matching, cooking timers, and saved recipes.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
