@@ -70,7 +70,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     setFormError('');
 
     try {
-      const user = await AuthService.loginWithGoogle('Gourmet Chef', email.trim() || 'chef@pantry.app');
+      const user = await AuthService.loginWithGoogle();
       onAuthSuccess(user);
     } catch (err: any) {
       setFormError(err.message || 'Google sign in failed.');

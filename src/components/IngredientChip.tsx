@@ -24,7 +24,7 @@ export const IngredientChip: React.FC<IngredientChipProps> = ({
     return (
       <span
         onClick={onClick}
-        className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide border border-dashed border-[#E05345]/80 bg-[#FAF5EC] text-[#E05345] transition-all ${className}`}
+        className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide border border-dashed border-[#E05345]/80 dark:border-[#FF6B5C]/70 bg-[#FAF5EC] dark:bg-[#2A1816] text-[#C23B2D] dark:text-[#FF8A7A] transition-all ${className}`}
       >
         {name}
       </span>
@@ -38,11 +38,15 @@ export const IngredientChip: React.FC<IngredientChipProps> = ({
         onClick={onToggle || onClick}
         className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all active-press ${
           isSelected
-            ? 'bg-[#153B28] text-[#F8F0E2] shadow-xs'
-            : 'bg-[#EFE8D8] text-[#153B28] hover:bg-[#E3DAC8]'
+            ? 'bg-[#153B28] dark:bg-[#2E6B4B] text-[#F8F0E2] dark:text-white shadow-xs'
+            : 'bg-[#EFE8D8] dark:bg-[#1F3C2E] text-[#153B28] dark:text-[#E2EFE5] hover:bg-[#E3DAC8] dark:hover:bg-[#274B39]'
         } ${className}`}
       >
-        {isSelected ? <Check className="w-3 h-3 text-[#DCE9DA]" /> : <Plus className="w-3 h-3 text-[#153B28]/70" />}
+        {isSelected ? (
+          <Check className="w-3 h-3 text-[#DCE9DA] dark:text-[#A7F3D0]" />
+        ) : (
+          <Plus className="w-3 h-3 text-[#153B28]/70 dark:text-[#B6CEBC]" />
+        )}
         <span>{name}</span>
       </button>
     );
@@ -51,7 +55,7 @@ export const IngredientChip: React.FC<IngredientChipProps> = ({
   if (variant === 'editable') {
     return (
       <span
-        className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#DCE9DA] text-[#153B28] border border-[#C5D8C2] shadow-2xs ${className}`}
+        className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#DCE9DA] dark:bg-[#224835] text-[#153B28] dark:text-[#F8F0E2] border border-[#C5D8C2] dark:border-[#38674E] shadow-2xs ${className}`}
       >
         <span>{name}</span>
         {onRemove && (
@@ -61,7 +65,7 @@ export const IngredientChip: React.FC<IngredientChipProps> = ({
               e.stopPropagation();
               onRemove();
             }}
-            className="p-0.5 rounded-full hover:bg-[#153B28]/10 text-[#153B28] transition-colors"
+            className="p-0.5 rounded-full hover:bg-[#153B28]/10 dark:hover:bg-white/10 text-[#153B28] dark:text-[#F8F0E2] transition-colors"
             title="Remove ingredient"
             aria-label={`Remove ${name}`}
           >
@@ -76,9 +80,10 @@ export const IngredientChip: React.FC<IngredientChipProps> = ({
   return (
     <span
       onClick={onClick}
-      className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-[#DCE9DA] text-[#153B28] border border-[#C8DAC5] ${className}`}
+      className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-[#DCE9DA] dark:bg-[#224835] text-[#153B28] dark:text-[#F8F0E2] border border-[#C8DAC5] dark:border-[#38674E] ${className}`}
     >
       {name}
     </span>
   );
 };
+

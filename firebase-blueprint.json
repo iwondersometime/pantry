@@ -1,0 +1,117 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "googlePhotoURL": {
+          "type": "string"
+        },
+        "customPhotoURL": {
+          "type": "string"
+        },
+        "photoSource": {
+          "type": "string"
+        },
+        "allergies": {
+          "type": "array"
+        },
+        "onboardingCompleted": {
+          "type": "boolean"
+        },
+        "theme": {
+          "type": "string"
+        },
+        "cookingPreference": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "number"
+        },
+        "updatedAt": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "name",
+        "email"
+      ]
+    },
+    "SavedRecipe": {
+      "title": "SavedRecipe",
+      "description": "Recipe saved by user",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "recipeId": {
+          "type": "string"
+        },
+        "savedAt": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "recipeId",
+        "savedAt"
+      ]
+    },
+    "ScanHistory": {
+      "title": "ScanHistory",
+      "description": "Ingredient scan history entry",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "ingredients": {
+          "type": "array"
+        },
+        "ideasCount": {
+          "type": "number"
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "rawDate": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "ingredients",
+        "ideasCount",
+        "rawDate"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/User"
+      },
+      "description": "User profile document"
+    },
+    "/users/{userId}/savedRecipes/{recipeId}": {
+      "schema": {
+        "$ref": "#/entities/SavedRecipe"
+      },
+      "description": "User saved recipes subcollection"
+    },
+    "/users/{userId}/scanHistory/{historyId}": {
+      "schema": {
+        "$ref": "#/entities/ScanHistory"
+      },
+      "description": "User scan history subcollection"
+    }
+  }
+}

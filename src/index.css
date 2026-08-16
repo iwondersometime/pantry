@@ -1,30 +1,102 @@
 @import "tailwindcss";
 
+@variant dark (&:where(.dark, .dark *));
+
 @layer base {
   :root {
-    --bg-cream: #F8F0E2;
-    --text-forest: #153B28;
+    --background: #F8F0E2;
+    --surface: #FFFDF8;
+    --surface-elevated: #FAF5EC;
+    --surface-secondary: #EFE8D8;
     --surface-sage: #DCE9DA;
+    --text-primary: #153B28;
+    --text-secondary: #567563;
+    --text-muted: #738F7E;
+    --border: rgba(21, 59, 40, 0.12);
+    --border-strong: rgba(21, 59, 40, 0.22);
+    --accent: #D48B14;
+    --accent-secondary: #E05345;
+    --success: #15803D;
+    --warning: #C2410C;
+
+    /* Legacy compatibility tokens */
+    --bg-cream: #F8F0E2;
+    --bg-surface: #FFFDF8;
+    --bg-card: #FAF5EC;
+    --bg-card-muted: #EFE8D8;
+    --text-forest: #153B28;
+    --text-forest-muted: #567563;
     --card-beige: #EFE8D8;
     --accent-coral: #E05345;
+    --accent-gold: #D48B14;
+    --border-subtle: rgba(21, 59, 40, 0.12);
   }
 
-  body {
-    background-color: #F8F0E2;
-    color: #153B28;
+  :root.dark, body.dark, .dark {
+    --background: #0D1A13;
+    --surface: #13241B;
+    --surface-elevated: #183024;
+    --surface-secondary: #1F3C2E;
+    --surface-sage: #224835;
+    --text-primary: #F8F0E2;
+    --text-secondary: #B6CEBC;
+    --text-muted: #85A38E;
+    --border: rgba(220, 233, 218, 0.14);
+    --border-strong: rgba(220, 233, 218, 0.25);
+    --accent: #F5B942;
+    --accent-secondary: #FF6B5C;
+    --success: #4ADE80;
+    --warning: #FB923C;
+
+    /* Legacy compatibility tokens */
+    --bg-cream: #0D1A13;
+    --bg-surface: #13241B;
+    --bg-card: #183024;
+    --bg-card-muted: #1F3C2E;
+    --text-forest: #F8F0E2;
+    --text-forest-muted: #B6CEBC;
+    --card-beige: #1F3C2E;
+    --accent-coral: #FF6B5C;
+    --accent-gold: #F5B942;
+    --border-subtle: rgba(220, 233, 218, 0.14);
+  }
+
+  html, body {
+    background-color: var(--background);
+    color: var(--text-primary);
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    transition: background-color 0.25s ease, color 0.25s ease;
+    /* Ensure native smooth touch scrolling on mobile */
+    touch-action: manipulation;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: auto;
   }
 
   h1, h2, h3, .font-serif-editorial {
     font-family: 'Playfair Display', Georgia, serif;
+    color: var(--text-primary);
   }
+}
+
+/* Ensure mobile vertical scrolling is never blocked by gestures */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Botanical subtle watermarked textures */
+.botanical-ambient {
+  pointer-events: none;
+  position: absolute;
+  opacity: 0.05;
+}
+.dark .botanical-ambient {
+  opacity: 0.035;
 }
 
 /* Custom Dotted Background for Camera Area */
 .bg-dotted-pattern {
-  background-image: radial-gradient(#153B28 0.75px, transparent 0.75px);
+  background-image: radial-gradient(currentColor 0.75px, transparent 0.75px);
   background-size: 12px 12px;
-  background-color: #FAF5EC;
 }
 
 /* Custom Hide Scrollbar */
@@ -43,4 +115,24 @@
 .active-press:active {
   transform: scale(0.97);
   opacity: 0.9;
+}
+
+/* Card shimmer */
+@keyframes subtle-float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(1deg);
+  }
+}
+
+.animate-subtle-float {
+  animation: subtle-float 6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-subtle-float {
+    animation: none;
+  }
 }
